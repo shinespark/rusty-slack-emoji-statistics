@@ -1,7 +1,8 @@
 extern crate clap;
 
 use clap::{App, Arg};
-use rusty_slack_emoji_statistics::slack::SlackRequest;
+
+use rusty_slack_emoji_statistics::cli;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,8 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_matches();
 
     let token = matches.value_of("SLACK_TOKEN").unwrap();
-    let slack_request = SlackRequest::new(token);
-    let (_status_code, res) = slack_request.lists_custom_emoji().await?;
-    println!("{:?}", res);
+    let _ = cli::statistics(token).await;
+
     Ok(())
 }

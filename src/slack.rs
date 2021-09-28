@@ -20,7 +20,7 @@ struct ConversationsListResponse {
 pub struct Channel {
     id: String,
     name: String,
-    is_channel: bool,
+    pub is_channel: bool,
     is_group: bool,
     is_im: bool,
     created: u64,

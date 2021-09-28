@@ -5,10 +5,17 @@ pub async fn statistics(token: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let emojis = slack_request.emoji_list().await?;
 
-    println!("{:?}", emojis.len());
-    println!("{:?}", emojis);
+    dbg!(emojis.len());
+    dbg!(emojis);
 
-    let channels = slack_request.channel_list().await?;
+    let raw_channels = slack_request.channel_list().await?;
+    let channels = raw_channels
+        .into_iter()
+        .filter(|c| c.is_channel == true)
+        .collect::<Vec<_>>();
+
+    dbg!(channels.len());
+    dbg!(channels);
 
     // TODO: channelに絞り込む？
     // TODO: channelにpost取りにいくメソッド生やす？

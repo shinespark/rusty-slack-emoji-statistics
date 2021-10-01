@@ -1,4 +1,5 @@
 use crate::slack::SlackRequest;
+use tokio_stream::{self, StreamExt};
 
 pub async fn statistics(token: &str) -> Result<(), Box<dyn std::error::Error>> {
     let slack_request = SlackRequest::new(token);
@@ -14,13 +15,12 @@ pub async fn statistics(token: &str) -> Result<(), Box<dyn std::error::Error>> {
         .filter(|c| c.is_channel == true)
         .collect::<Vec<_>>();
 
-    dbg!(channels.len());
-    dbg!(channels);
-
-    // TODO: channelに絞り込む？
-    // TODO: channelにpost取りにいくメソッド生やす？
-    println!("{:?}", channels.len());
-    println!("{:?}", channels);
+    let mut stream = tokio_stream::iter(&channels);
+    while let Some(c) = stream.next().await {
+        dbg!(&c.id);
+        dbg!(&c.name);
+        slack_request.channel_history_all(&c.id).await;
+    }
 
     Ok(())
 }

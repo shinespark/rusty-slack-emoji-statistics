@@ -27,7 +27,7 @@ pub struct Channel {
     is_im: bool,
     created: u64,
     creator: String,
-    is_archived: bool,
+    pub is_archived: bool,
     is_general: bool,
     unlinked: u64,
     name_normalized: String,
@@ -53,16 +53,26 @@ struct ConversationsHistoryResponse {
     messages: Vec<Message>,
     has_more: bool,
     pin_count: u64,
-    response_metadata: ResponseMetadata,
+    response_metadata: Option<ResponseMetadata>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Message {
-    #[serde(rename(deserialize = "type"))]
-    type_: String,
-    user: String,
-    text: String,
-    ts: String,
+    // #[serde(rename(deserialize = "type"))]
+    // type_: Option<String>,
+    // subtype: Option<String>,
+    // bot_id: Option<String>,
+    // user: Option<String>,
+    text: Option<String>,
+    reactions: Option<Vec<Reaction>>,
+    // ts: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Reaction {
+    name: String,
+    users: Vec<String>,
+    count: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -97,44 +107,44 @@ impl SlackRequest {
             .header(header::CONTENT_TYPE, CONTENT_TYPE)
             .send()
             .await?;
-        let body = res.text().await?;
-        let json: ConversationsListResponse = serde_json::from_str(&body)?;
+        let json = res.json::<ConversationsListResponse>().await?;
 
         Ok(json.channels)
     }
 
-    pub async fn channel_history_all(
+    pub async fn channel_join(&self, channel_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let client = Client::builder().build()?;
+        let query = [("channel", channel_id)];
+
+        let res = client
+            .post(CONVERSATIONS_JOIN_API)
+            .header(header::AUTHORIZATION, &self.token)
+            .header(header::CONTENT_TYPE, CONTENT_TYPE)
+            .form(&query)
+            .send()
+            .await?;
+        let json = res.json::<ConversationsJoinResponse>().await?;
+        dbg!(json.warning);
+
+        Ok(())
+    }
+
+    pub async fn channel_history(
         &self,
         channel_id: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let client = Client::builder().build()?;
         dbg!(channel_id);
-        let messages = self
-            .channel_history(client, channel_id, "".to_string())
-            .await;
-
-        Ok(())
-    }
-
-    async fn channel_history(
-        &self,
-        client: Client,
-        channel_id: &str,
-        _next_cursor: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        dbg!("aa");
-        let query = &[("channel", channel_id)];
+        let query = [("channel", channel_id)];
 
         let res = client
             .get(CONVERSATIONS_HISTORY_API)
             .header(header::AUTHORIZATION, &self.token)
             .header(header::CONTENT_TYPE, CONTENT_TYPE)
-            .query(query)
+            .query(&query)
             .send()
             .await?;
-        let body = res.text().await?;
-        let json: ConversationsHistoryResponse = serde_json::from_str(&body)?;
-
+        let json = res.json::<ConversationsHistoryResponse>().await?;
         dbg!(json);
 
         Ok(())
@@ -148,8 +158,7 @@ impl SlackRequest {
             .header(header::CONTENT_TYPE, CONTENT_TYPE)
             .send()
             .await?;
-        let body = res.text().await?;
-        let json: EmojiListResponse = serde_json::from_str(&body)?;
+        let json = res.json::<EmojiListResponse>().await?;
 
         let emojis = json
             .emoji

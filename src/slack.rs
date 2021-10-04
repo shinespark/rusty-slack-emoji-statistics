@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 const CONTENT_TYPE: &str = "application/json; charset=utf-8";
 const CONVERSATIONS_LIST_API: &str = "https://slack.com/api/conversations.list";
+const CONVERSATIONS_JOIN_API: &str = "https://slack.com/api/conversations.join";
 const CONVERSATIONS_HISTORY_API: &str = "https://slack.com/api/conversations.history";
 const EMOJI_LIST_API: &str = "https://slack.com/api/emoji.list";
 
@@ -38,6 +39,12 @@ pub struct Channel {
     is_private: bool,
     is_mpim: bool,
     num_members: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConversationsJoinResponse {
+    ok: bool,
+    warning: String,
 }
 
 #[derive(Debug, Deserialize)]
